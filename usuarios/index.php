@@ -61,7 +61,7 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
 
 
 
-                    <br><br>
+
 
                     <div class="col-md-12">
                         <div class="card card-outline card-secondary">
@@ -159,11 +159,9 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                                     </div>
                                 </div>
 
-                             
                             </div> <!-- /.card-header -->
+
                             <div class="card-body">
-
-
                                 <div class="table-responsive overflow-auto">
                                     <table class="table table-bordered table-hover align-middle text-nowrap w-100" style="min-width: 600px;" id="tablaUsuarios">
                                         <thead class="text-center">
@@ -215,9 +213,14 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                                                                 <li>
                                                                     <hr class="dropdown-divider">
                                                                 </li>
-                                                                <li><a class="dropdown-item text-danger btn-eliminar" href="#">
-                                                                        <i class="bi bi-trash-fill"></i> Eliminar
-                                                                    </a></li>
+                                                                <li>
+                                                                    <a href="#" class="dropdown-item text-danger eliminar-usuario"
+                                                                        data-id="<?= (int)$usuarios['id_Usuarios']; ?>"
+                                                                        title="Eliminar">
+                                                                        <i class="bi bi-trash"></i> Eliminar
+                                                                    </a>
+                                                                </li>
+
                                                             </ul>
                                                         </div>
 
@@ -232,7 +235,7 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                     </div>
                                                                     <div class="modal-body">
-                                                                        <form action="#" method="post">
+                                                                        <form action="../app/controllers/usuarios/editar_usuario.php" method="post">
                                                                             <input type="hidden" name="id_Usuarios" value="<?= $id_usuario ?>">
 
                                                                             <!-- Nombre completo-->
@@ -271,7 +274,8 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                                                                             <!-- Estado -->
                                                                             <div class="mb-3">
                                                                                 <label for="estado<?= $id_usuario ?>" class="form-label fw-semibold text-start d-block">Estado: </label>
-                                                                                <select class="form-select" id="estado" name="estado<?= $id_usuario ?>" required>
+                                                                                <select class="form-select" id="estado<?= $id_usuario ?>" name="estado" required>
+
                                                                                     <option value="" disabled selected hidden>--Seleccione estado--</option>
                                                                                     <option value="Activo" <?= $estadoUsuario == 'Activo' ? 'selected' : ''  ?>>Activo</option>
                                                                                     <option value="Inactivo" <?= $estadoUsuario == 'Inactivo' ? 'selected' : ''  ?>>Inactivo</option>
@@ -325,6 +329,7 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                                 </div>
 
                             </div> <!-- /.card-body -->
+
                         </div> <!-- /.card -->
 
 
@@ -387,6 +392,41 @@ if (file_exists('../app/controllers/roles/listado_activo.php')) {
                         }
                     }
                 });
+            });
+        </script>
+
+        <?php include '../layouts/notificaciones.php'; ?>
+
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+
+                const botonesEliminar = document.querySelectorAll('.eliminar-usuario');
+
+                botonesEliminar.forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault(); // Evita que el enlace recargue inmediatamente
+
+                        const idUsuario = this.getAttribute('data-id');
+
+                        Swal.fire({
+                            title: "¿Está seguro?",
+                            text: "¡No podrás revertir esto!",
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#d33",
+                            confirmButtonText: "Sí, eliminarlo!",
+                            cancelButtonText: "Cancelar"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Redirige al PHP que elimina el usuario
+                                window.location.href = `../app/controllers/usuarios/borrar_usuario.php?id=${idUsuario}`;
+                            }
+                        });
+                    });
+                });
+
             });
         </script>
 

@@ -102,7 +102,7 @@ $rol           = $usuario['nombre_roles']  ?? "Sin rol";
                     <div class="modal fade" id="editarPerfil" tabindex="-1" aria-labelledby="editarPerfilLabel" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <form action="../app/controllers/usuarios/editarPerfil.php" method="POST" enctype="multipart/form-data">
+                                <form action="../app/controllers/profile/info_perfil_editar.php" method="POST" enctype="multipart/form-data">
                                     <!-- Header -->
                                     <div class="modal-header bg-primary text-white">
                                         <h1 class="modal-title fs-5" id="editarPerfilLabel">
@@ -185,6 +185,7 @@ $rol           = $usuario['nombre_roles']  ?? "Sin rol";
         </main>
 
         <?php include '../layouts/footer.php'; ?>
+        <?php include '../layouts/notificaciones.php';?>
     </div>
 </body>
 
