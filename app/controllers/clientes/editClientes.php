@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === "POST") {
         !empty(trim($_POST['genero_cliente'])) &&
         !empty(trim($_POST['estado_cliente']))
     ) {
-
+        //Sanitizar los datos (Tomar en cuenta todas las variables)
         $idCliente       = (int) $_POST['id_cliente'];
         $nombre_completoC = trim($_POST['nombre_completo']);
         $direccion_C     = trim($_POST['direccion_cliente']);

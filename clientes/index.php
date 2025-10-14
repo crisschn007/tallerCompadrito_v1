@@ -74,9 +74,12 @@ include '../app/controllers/clientes/listadoClientes.php';
                                         </thead>
                                         <tbody class="text-center">
                                             <?php if (!empty($clientes_datos)): ?>
+                                                <?php $contador = 1; ?>
                                                 <?php foreach ($clientes_datos as $cliente): ?>
                                                     <tr>
-                                                        <td><?= (int) $cliente['id_cliente'] ?></td>
+                                                        <!-- Contador secuencial en la tabla -->
+                                                        <td><?= $contador++; ?></td>
+
                                                         <td><?= htmlspecialchars($cliente['nombre_y_apellido']) ?></td>
                                                         <td><?= htmlspecialchars($cliente['direccion']) ?></td>
                                                         <td><?= htmlspecialchars($cliente['telefono']) ?></td>
@@ -137,11 +140,12 @@ include '../app/controllers/clientes/listadoClientes.php';
                                                         <div class="modal-dialog">
                                                             <div class="modal-content">
                                                                 <form action="../app/controllers/clientes/editClientes.php" method="post">
-                                                                    <div class="modal-header">
+                                                                    <div class="modal-header bg-primary text-white">
                                                                         <h1 class="modal-title fs-5" id="editarClienteLabel<?= $cliente['id_cliente'] ?>">Editar Cliente</h1>
                                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                                     </div>
                                                                     <div class="modal-body">
+                                                                        <!-- Aquí sí se usa el id_cliente real porque el controlador lo necesita -->
                                                                         <input type="hidden" name="id_cliente" value="<?= (int) $cliente['id_cliente'] ?>">
 
                                                                         <div class="mb-3">
@@ -268,12 +272,11 @@ include '../app/controllers/clientes/listadoClientes.php';
 
         <script>
             document.addEventListener("DOMContentLoaded", () => {
-                // Selecciona todos los botones con clase .btn-eliminar
                 const botonesEliminar = document.querySelectorAll(".btn-eliminar");
 
                 botonesEliminar.forEach(boton => {
                     boton.addEventListener("click", function(e) {
-                        e.preventDefault(); // Evita que recargue la página
+                        e.preventDefault();
 
                         const clienteId = this.getAttribute("data-id");
 
@@ -288,7 +291,6 @@ include '../app/controllers/clientes/listadoClientes.php';
                             cancelButtonText: "Cancelar"
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                // Redirige al controlador de eliminación
                                 window.location.href = "../app/controllers/clientes/deleteClientes.php?id=" + clienteId;
                             }
                         });
@@ -297,13 +299,12 @@ include '../app/controllers/clientes/listadoClientes.php';
             });
         </script>
 
-
-<script>
+        <script>
             $(document).ready(function() {
                 $('#tablaClientes').DataTable({
                     lengthMenu: [
                         [5, 10, 25, 50, 100],
-                        [5, 10, 25, 50, 100] // Estos son los textos que se muestran en el menú
+                        [5, 10, 25, 50, 100]
                     ],
                     language: {
                         processing: "Procesando...",
@@ -329,7 +330,6 @@ include '../app/controllers/clientes/listadoClientes.php';
                 });
             });
         </script>
-
 
         <?php include '../layouts/notificaciones.php'; ?>
 

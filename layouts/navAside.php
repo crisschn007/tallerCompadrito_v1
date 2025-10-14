@@ -24,7 +24,7 @@
 
             $usuario = [];
             if ($id_usuario) {
-                $sql = "SELECT u.nombre, u.foto, r.nombre_roles 
+                $sql = "SELECT u.nombre, u.foto, r.nombre_roles
             FROM usuarios u
             INNER JOIN roles r ON u.id_roles = r.id_roles
             WHERE u.id_Usuarios = :id LIMIT 1";

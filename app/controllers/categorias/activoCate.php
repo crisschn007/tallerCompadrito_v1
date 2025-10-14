@@ -1,5 +1,5 @@
 <?php
-// app/controllers/roles/listado_activo.php
+// app/controllers/categorias/activoCate.php
 
 require_once __DIR__ . '/../../conexionBD.php';
 

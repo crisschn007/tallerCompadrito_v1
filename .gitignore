@@ -1,0 +1,6 @@
+/vendor/        # ⚠️composer install lo reconstruye
+/public/dist/   # Generado automáticamente
+/.env
+/.idea
+/.vscode
+.DS_Store
