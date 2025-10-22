@@ -1,5 +1,8 @@
 <?php
 
+// 🔹 Establecer zona horaria global (Guatemala)
+date_default_timezone_set('America/Guatemala');
+
 if (!defined('SERVIDOR')) {
     define('SERVIDOR', 'localhost');
 }
@@ -30,4 +33,5 @@ try {
     die("Error al conectar a la base de datos: " . $e->getMessage());
 }
 
+// 🔹 Ruta base global del proyecto
 $URL = "http://localhost/tallerCompadrito_v1/";

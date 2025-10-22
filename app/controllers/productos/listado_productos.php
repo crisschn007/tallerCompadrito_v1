@@ -2,7 +2,7 @@
 /* app/controllers/productos/listado_productos.php */
 
 try {
-    $sql_productos = "SELECT 
+    $sql_productos = "SELECT
         p.id_producto AS id_producto,
         p.codigo_barras,
         p.imagen,
@@ -10,7 +10,7 @@ try {
         p.descripcion,
         p.stock,
         p.precio,
-        p.id_categoria,        
+        p.id_categoria,
         c.nombre AS categoria
     FROM Producto p
     LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
