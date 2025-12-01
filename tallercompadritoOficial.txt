@@ -1,0 +1,510 @@
+
+-- Base de datos: `tallercompadrito`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `caja`
+--
+
+CREATE TABLE `caja` (
+  `id_caja` int(11) NOT NULL,
+  `fecha_apertura` datetime NOT NULL,
+  `fecha_cierre` datetime DEFAULT NULL,
+  `monto_apertura` decimal(10,2) NOT NULL,
+  `monto_actual` decimal(10,2) NOT NULL,
+  `estado` enum('abierta','cerrada') NOT NULL DEFAULT 'abierta',
+  `id_usuario` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Estructura de tabla para la tabla `categoria`
+--
+
+CREATE TABLE `categoria` (
+  `id_categoria` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text NOT NULL,
+  `estado` enum('Activo','Inactivo') NOT NULL DEFAULT 'Inactivo'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Estructura de tabla para la tabla `cliente`
+--
+
+CREATE TABLE `cliente` (
+  `id_cliente` int(11) NOT NULL,
+  `nombre_y_apellido` varchar(200) NOT NULL,
+  `direccion` text DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `email` varchar(200) DEFAULT NULL,
+  `cui` varchar(45) DEFAULT NULL,
+  `genero` enum('Masculino','Femenino','Otro') DEFAULT 'Otro',
+  `estado` enum('Activo','Inactivo') DEFAULT 'Inactivo'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+
+--
+-- Estructura de tabla para la tabla `compra`
+--
+
+CREATE TABLE `compra` (
+  `id_Compra` int(10) UNSIGNED NOT NULL,
+  `fecha_y_hora` datetime NOT NULL,
+  `tipo_documento` enum('FACTURA','TICKET','RECIBO','OTRO') NOT NULL,
+  `numero_documento` varchar(50) NOT NULL,
+  `tipo_calculo` enum('normal','descuento','impuesto') NOT NULL,
+  `porcentaje_descuento_global` decimal(5,2) DEFAULT 0.00,
+  `tipo_impuesto` varchar(20) DEFAULT 'IVA12',
+  `subtotal` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `descuento_total` decimal(10,2) DEFAULT 0.00,
+  `impuesto_total` decimal(10,2) DEFAULT 0.00,
+  `total` decimal(10,2) NOT NULL,
+  `id_proveedor` int(11) NOT NULL,
+  `id_Usuarios` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Estructura de tabla para la tabla `cotizacion`
+--
+
+CREATE TABLE `cotizacion` (
+  `id_Cotizacion` int(11) NOT NULL,
+  `fecha` datetime NOT NULL DEFAULT current_timestamp(),
+  `total` decimal(10,2) NOT NULL,
+  `estado` enum('Pendiente','Aceptada','Rechazada') DEFAULT 'Pendiente',
+  `condicion_pago` enum('Contado','Crédito de 15 Días') DEFAULT 'Contado',
+  `id_cliente` int(11) NOT NULL,
+  `id_Usuarios` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `detalle_compra`
+--
+
+CREATE TABLE `detalle_compra` (
+  `id_detalleCompra` int(10) UNSIGNED NOT NULL,
+  `id_compra` int(10) UNSIGNED NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `costo_unitario` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Estructura de tabla para la tabla `detalle_cotizacion`
+--
+
+CREATE TABLE `detalle_cotizacion` (
+  `id_detalleCotizacion` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `id_Cotizacion` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `detalle_venta`
+--
+
+CREATE TABLE `detalle_venta` (
+  `id_detalleVenta` int(11) NOT NULL,
+  `id_venta` int(11) NOT NULL,
+  `id_producto` int(11) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `descuento` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `total_linea` decimal(10,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Estructura de tabla para la tabla `historial_caja`
+--
+
+CREATE TABLE `historial_caja` (
+  `id_historial` int(11) NOT NULL,
+  `id_caja` int(11) NOT NULL,
+  `tipo_movimiento` enum('ingreso','egreso','devolucion','prestamo','gasto') NOT NULL,
+  `monto` decimal(10,2) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `fecha_movimiento` datetime NOT NULL DEFAULT current_timestamp(),
+  `numero_comprobante` varchar(25) DEFAULT NULL,
+  `tabla_origen` enum('Venta','Compra','Otro') DEFAULT 'Otro',
+  `id_usuario` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Estructura de tabla para la tabla `producto`
+--
+
+CREATE TABLE `producto` (
+  `id_producto` int(11) NOT NULL,
+  `codigo_barras` varchar(50) DEFAULT NULL,
+  `nombre_producto` varchar(200) NOT NULL,
+  `descripcion` text NOT NULL,
+  `stock` int(11) NOT NULL,
+  `imagen` varchar(255) DEFAULT NULL,
+  `id_categoria` int(11) DEFAULT NULL,
+  `precio` decimal(10,2) NOT NULL DEFAULT 0.00
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Estructura de tabla para la tabla `proveedor`
+--
+
+CREATE TABLE `proveedor` (
+  `id_proveedor` int(11) NOT NULL,
+  `nombre_empresa` varchar(220) NOT NULL,
+  `representante` varchar(150) NOT NULL,
+  `direccion` text NOT NULL,
+  `telefono` varchar(20) NOT NULL,
+  `email` varchar(200) NOT NULL,
+  `sitio_web` varchar(255) NOT NULL,
+  `estado` enum('Activo','Inactivo') NOT NULL DEFAULT 'Inactivo',
+  `condicion_pago` enum('Contado','Credito 30 dias') NOT NULL DEFAULT 'Contado'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Estructura de tabla para la tabla `roles`
+--
+
+CREATE TABLE `roles` (
+  `id_roles` int(11) NOT NULL,
+  `nombre_roles` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `estado` enum('Activo','Inactivo') NOT NULL DEFAULT 'Inactivo'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `roles`
+--
+
+INSERT INTO `roles` (`id_roles`, `nombre_roles`, `descripcion`, `estado`) VALUES
+(1, 'Administrador', 'Tiene todos los permisos del sistema', 'Activo'),
+(2, 'Contador', 'Encargado de llevar el control del dinero de las compras y ventas', 'Activo');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuarios`
+--
+
+CREATE TABLE `usuarios` (
+  `id_Usuarios` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `nombre_usuario` varchar(100) NOT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `edad` int(11) NOT NULL,
+  `estado` enum('Activo','Inactivo') NOT NULL DEFAULT 'Inactivo',
+  `id_roles` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+--
+-- Volcado de datos para la tabla `usuarios`
+--
+
+INSERT INTO `usuarios` (`id_Usuarios`, `nombre`, `nombre_usuario`, `foto`, `password`, `edad`, `estado`, `id_roles`) VALUES
+(1, 'Cristian Chun', 'admin', '68e461ab57f5a_default.png', '$2a$12$gkS.yQOgJB2bFt9unkjlF.2vmDg7K9GImZzbkaOsSjqOrlLxRQX0C', 25, 'Activo', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `venta`
+--
+
+CREATE TABLE `venta` (
+  `id_venta` int(11) NOT NULL,
+  `fecha_y_hora` datetime NOT NULL,
+  `total` decimal(10,2) NOT NULL,
+  `id_cliente` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `condicion_pago` enum('Contado','Crédito de 15 Días') DEFAULT 'Contado',
+  `efectivo_recibido` decimal(10,2) DEFAULT 0.00,
+  `cambio` decimal(10,2) DEFAULT 0.00,
+  `numero_comprobante` varchar(25) DEFAULT NULL,
+  `id_caja` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
+
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `caja`
+--
+ALTER TABLE `caja`
+  ADD PRIMARY KEY (`id_caja`),
+  ADD KEY `fk_caja_usuario` (`id_usuario`);
+
+--
+-- Indices de la tabla `categoria`
+--
+ALTER TABLE `categoria`
+  ADD PRIMARY KEY (`id_categoria`);
+
+--
+-- Indices de la tabla `cliente`
+--
+ALTER TABLE `cliente`
+  ADD PRIMARY KEY (`id_cliente`);
+
+--
+-- Indices de la tabla `compra`
+--
+ALTER TABLE `compra`
+  ADD PRIMARY KEY (`id_Compra`),
+  ADD KEY `idx_fecha` (`fecha_y_hora`),
+  ADD KEY `fk_compra_proveedor` (`id_proveedor`),
+  ADD KEY `fk_compra_usuario` (`id_Usuarios`);
+
+--
+-- Indices de la tabla `cotizacion`
+--
+ALTER TABLE `cotizacion`
+  ADD PRIMARY KEY (`id_Cotizacion`),
+  ADD KEY `fk_cotizacion_cliente` (`id_cliente`),
+  ADD KEY `fk_cotizacion_usuario` (`id_Usuarios`);
+
+--
+-- Indices de la tabla `detalle_compra`
+--
+ALTER TABLE `detalle_compra`
+  ADD PRIMARY KEY (`id_detalleCompra`),
+  ADD KEY `fk_detalleCompra_compra` (`id_compra`),
+  ADD KEY `fk_detalleCompra_producto` (`id_producto`);
+
+--
+-- Indices de la tabla `detalle_cotizacion`
+--
+ALTER TABLE `detalle_cotizacion`
+  ADD PRIMARY KEY (`id_detalleCotizacion`),
+  ADD KEY `fk_detalle_cotizacion` (`id_Cotizacion`),
+  ADD KEY `fk_detalleCot_producto` (`id_producto`);
+
+--
+-- Indices de la tabla `detalle_venta`
+--
+ALTER TABLE `detalle_venta`
+  ADD PRIMARY KEY (`id_detalleVenta`),
+  ADD KEY `idx_venta` (`id_venta`),
+  ADD KEY `idx_producto` (`id_producto`);
+
+--
+-- Indices de la tabla `historial_caja`
+--
+ALTER TABLE `historial_caja`
+  ADD PRIMARY KEY (`id_historial`),
+  ADD KEY `fk_historial_usuario` (`id_usuario`),
+  ADD KEY `fk_historial_caja` (`id_caja`);
+
+--
+-- Indices de la tabla `producto`
+--
+ALTER TABLE `producto`
+  ADD PRIMARY KEY (`id_producto`),
+  ADD UNIQUE KEY `codigo_barras` (`codigo_barras`),
+  ADD KEY `id_categoria` (`id_categoria`);
+
+--
+-- Indices de la tabla `proveedor`
+--
+ALTER TABLE `proveedor`
+  ADD PRIMARY KEY (`id_proveedor`);
+
+--
+-- Indices de la tabla `roles`
+--
+ALTER TABLE `roles`
+  ADD PRIMARY KEY (`id_roles`);
+
+--
+-- Indices de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD PRIMARY KEY (`id_Usuarios`),
+  ADD KEY `id_roles` (`id_roles`);
+
+--
+-- Indices de la tabla `venta`
+--
+ALTER TABLE `venta`
+  ADD PRIMARY KEY (`id_venta`),
+  ADD KEY `fk_venta_caja` (`id_caja`),
+  ADD KEY `fk_venta_cliente` (`id_cliente`),
+  ADD KEY `fk_venta_usuario` (`id_usuario`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `caja`
+--
+ALTER TABLE `caja`
+  MODIFY `id_caja` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `categoria`
+--
+ALTER TABLE `categoria`
+  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `cliente`
+--
+ALTER TABLE `cliente`
+  MODIFY `id_cliente` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT de la tabla `compra`
+--
+ALTER TABLE `compra`
+  MODIFY `id_Compra` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `cotizacion`
+--
+ALTER TABLE `cotizacion`
+  MODIFY `id_Cotizacion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `detalle_compra`
+--
+ALTER TABLE `detalle_compra`
+  MODIFY `id_detalleCompra` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `detalle_cotizacion`
+--
+ALTER TABLE `detalle_cotizacion`
+  MODIFY `id_detalleCotizacion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `detalle_venta`
+--
+ALTER TABLE `detalle_venta`
+  MODIFY `id_detalleVenta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `historial_caja`
+--
+ALTER TABLE `historial_caja`
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `producto`
+--
+ALTER TABLE `producto`
+  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `proveedor`
+--
+ALTER TABLE `proveedor`
+  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `id_roles` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  MODIFY `id_Usuarios` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT de la tabla `venta`
+--
+ALTER TABLE `venta`
+  MODIFY `id_venta` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `caja`
+--
+ALTER TABLE `caja`
+  ADD CONSTRAINT `fk_caja_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_Usuarios`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `compra`
+--
+ALTER TABLE `compra`
+  ADD CONSTRAINT `fk_compra_proveedor` FOREIGN KEY (`id_proveedor`) REFERENCES `proveedor` (`id_proveedor`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_compra_usuario` FOREIGN KEY (`id_Usuarios`) REFERENCES `usuarios` (`id_Usuarios`) ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `cotizacion`
+--
+ALTER TABLE `cotizacion`
+  ADD CONSTRAINT `fk_cotizacion_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_cotizacion_usuario` FOREIGN KEY (`id_Usuarios`) REFERENCES `usuarios` (`id_Usuarios`) ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `detalle_compra`
+--
+ALTER TABLE `detalle_compra`
+  ADD CONSTRAINT `fk_detalleCompra_compra` FOREIGN KEY (`id_compra`) REFERENCES `compra` (`id_Compra`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_detalleCompra_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `detalle_cotizacion`
+--
+ALTER TABLE `detalle_cotizacion`
+  ADD CONSTRAINT `fk_detalleCot_producto` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_detalle_cotizacion` FOREIGN KEY (`id_Cotizacion`) REFERENCES `cotizacion` (`id_Cotizacion`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `detalle_venta`
+--
+ALTER TABLE `detalle_venta`
+  ADD CONSTRAINT `fk_detalleVenta_producto_v2` FOREIGN KEY (`id_producto`) REFERENCES `producto` (`id_producto`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_detalle_venta_venta` FOREIGN KEY (`id_venta`) REFERENCES `venta` (`id_venta`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `historial_caja`
+--
+ALTER TABLE `historial_caja`
+  ADD CONSTRAINT `fk_historial_caja` FOREIGN KEY (`id_caja`) REFERENCES `caja` (`id_caja`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_historial_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_Usuarios`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `producto`
+--
+ALTER TABLE `producto`
+  ADD CONSTRAINT `producto_ibfk_1` FOREIGN KEY (`id_categoria`) REFERENCES `categoria` (`id_categoria`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `usuarios`
+--
+ALTER TABLE `usuarios`
+  ADD CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`id_roles`) REFERENCES `roles` (`id_roles`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Filtros para la tabla `venta`
+--
+ALTER TABLE `venta`
+  ADD CONSTRAINT `fk_venta_caja` FOREIGN KEY (`id_caja`) REFERENCES `caja` (`id_caja`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_venta_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_venta_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_Usuarios`) ON DELETE NO ACTION ON UPDATE CASCADE;
