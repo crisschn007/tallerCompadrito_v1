@@ -46,7 +46,15 @@ CREATE TABLE `cliente` (
   `estado` enum('Activo','Inactivo') DEFAULT 'Inactivo'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_spanish2_ci;
 
+--
+-- Volcado de datos para la tabla `cliente`
+--
 
+INSERT INTO `cliente` (`id_cliente`, `nombre_y_apellido`, `direccion`, `telefono`, `email`, `cui`, `genero`, `estado`) VALUES
+(1, 'Consumidor Final', 'Ciudad', NULL, NULL, NULL, 'Otro', 'Activo');
+
+
+-- --------------------------------------------------------
 
 --
 -- Estructura de tabla para la tabla `compra`
@@ -507,4 +515,5 @@ ALTER TABLE `usuarios`
 ALTER TABLE `venta`
   ADD CONSTRAINT `fk_venta_caja` FOREIGN KEY (`id_caja`) REFERENCES `caja` (`id_caja`) ON DELETE SET NULL ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_venta_cliente` FOREIGN KEY (`id_cliente`) REFERENCES `cliente` (`id_cliente`) ON DELETE NO ACTION ON UPDATE CASCADE,
+
   ADD CONSTRAINT `fk_venta_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id_Usuarios`) ON DELETE NO ACTION ON UPDATE CASCADE;
