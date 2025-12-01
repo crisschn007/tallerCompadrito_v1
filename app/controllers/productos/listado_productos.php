@@ -19,6 +19,9 @@ try {
     $query_producto = $pdo->prepare($sql_productos);
     $query_producto->execute();
     $producto_datos = $query_producto->fetchAll(PDO::FETCH_ASSOC);
+
+    $total_productos = count($producto_datos);
+
 } catch (PDOException $e) {
     echo "Error al Consultar Productos: " . $e->getMessage();
 }

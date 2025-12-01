@@ -217,22 +217,21 @@ include '../../app/controllers/clientes/listadoClientes.php';
                 }
 
                 const colorStock = producto.stock <= 5 ? 'text-danger fw-bold' : 'text-success';
-                const fila = `
-<tr id="fila-${producto.id}" data-price="${parseFloat(producto.precio)}" data-stock="${parseInt(producto.stock,10)}">
-  <td>${producto.codigo}</td>
-  <td>${producto.text}</td>
-  <td class="${colorStock}">${producto.stock}</td>
-  <td><input type="number" class="form-control cantidad text-center" value="1" min="1" max="${producto.stock}" step="1" /></td>
-  <td class="precio-text">Q${parseFloat(producto.precio).toFixed(2)}</td>
-  <td>
-    <div class="input-group input-group-sm">
-      <span class="input-group-text">Q</span>
-      <input type="number" class="form-control descuento text-center" value="0" min="0" max="${parseFloat(producto.precio)}" step="0.01" />
-    </div>
-  </td>
-  <td class="subtotal">Q${parseFloat(producto.precio).toFixed(2)}</td>
-  <td><button class="btn btn-danger btn-sm eliminar"><i class="bi bi-trash"></i></button></td>
-</tr>`;
+                const fila = ` <tr id="fila-${producto.id}" data-price="${parseFloat(producto.precio)}" data-stock="${parseInt(producto.stock,10)}">
+                    <td>${producto.codigo}</td>
+                    <td>${producto.text}</td>
+                    <td class="${colorStock}">${producto.stock}</td>
+                    <td><input type="number" class="form-control cantidad text-center" value="1" min="1" max="${producto.stock}" step="1" /></td>
+                    <td class="precio-text">Q${parseFloat(producto.precio).toFixed(2)}</td>
+                    <td>
+                    <div class="input-group input-group-sm">
+                    <span class="input-group-text">Q</span>
+                    <input type="number" class="form-control descuento text-center" value="0" min="0" max="${parseFloat(producto.precio)}" step="0.01" />
+                    </div>
+                    </td>
+                    <td class="subtotal">Q${parseFloat(producto.precio).toFixed(2)}</td>
+                    <td><button class="btn btn-danger btn-sm eliminar"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
                 $('#tablaProductos tbody').append(fila);
                 $('#buscarProducto').val(null).trigger('change.select2');
                 calcularTotales();

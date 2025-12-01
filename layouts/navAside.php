@@ -178,6 +178,29 @@
                         </li>
                     </ul>
                 </li>
+
+                <!-- Caja -->
+                <li class="nav-item menu-close">
+                    <a href="#" class="nav-link inactive">
+                        <i class="nav-icon bi bi-cash-coin"></i>
+                        <p>Caja <i class="nav-arrow bi bi-chevron-right"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview" style="margin-left: 20px;">
+                        <li class="nav-item">
+                            <a href="<?php echo $URL ?>caja/administrar" class="nav-link">
+                                <i class="nav-icon bi bi-gear-fill"></i>
+                                <p>Administrar Caja</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?php echo $URL ?>caja/historial" class="nav-link">
+                                <i class="nav-icon bi bi-clock-history"></i>
+                                <p>Historial de Caja</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Ventas -->
                 <li class="nav-item menu-close">
                     <a href="#" class="nav-link inactive">
