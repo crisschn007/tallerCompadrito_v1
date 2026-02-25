@@ -1,72 +1,104 @@
 <?php
-session_start(); // 🔹 Siempre al inicio
+# app/controllers/caja/prestamo.php
 
-// 🔹 Conexión y sesión
-include '../../../app/conexionBD.php';
-include '../../../layouts/sesion.php';
+require_once '../../../app/conexionBD.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 try {
+
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Método no permitido.');
     }
 
-    // 🔹 Datos del formulario
+    if (!isset($_SESSION['id_usuario'])) {
+        throw new Exception('Sesión inválida.');
+    }
+
     $monto = isset($_POST['monto']) ? floatval($_POST['monto']) : 0;
-    $descripcion = trim($_POST['descripcion']);
-    $id_usuario = $_SESSION['id_usuario'];
+    $descripcion = isset($_POST['descripcion']) ? trim($_POST['descripcion']) : '';
+    $id_usuario = (int) $_SESSION['id_usuario'];
 
     if ($monto <= 0 || empty($descripcion)) {
         throw new Exception('Debe ingresar un monto válido y una descripción.');
     }
 
-    // 🔹 Verificar caja abierta del usuario actual
-    $sqlCaja = "SELECT * FROM Caja WHERE estado = 'abierta' AND id_usuario = :id_usuario LIMIT 1";
+    // 🔒 Iniciar transacción
+    $pdo->beginTransaction();
+
+    // 🔍 Buscar caja abierta del usuario (bloqueando fila)
+    $sqlCaja = "
+        SELECT id_caja, monto_actual 
+        FROM caja 
+        WHERE estado = 'abierta' 
+          AND id_Usuarios = :id_usuario
+        LIMIT 1
+        FOR UPDATE
+    ";
+
     $stmtCaja = $pdo->prepare($sqlCaja);
-    $stmtCaja->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
-    $stmtCaja->execute();
+    $stmtCaja->execute(['id_usuario' => $id_usuario]);
     $caja = $stmtCaja->fetch(PDO::FETCH_ASSOC);
 
     if (!$caja) {
-        throw new Exception('No tienes una caja abierta. Debes abrir una antes de registrar un préstamo.');
+        throw new Exception('No tienes una caja abierta.');
     }
 
-    $id_caja = $caja['id_caja'];
-    $monto_actual = (float)$caja['monto_actual'];
+    $id_caja = (int) $caja['id_caja'];
+    $monto_actual = (float) $caja['monto_actual'];
 
     if ($monto > $monto_actual) {
-        throw new Exception('El monto del préstamo no puede ser mayor al monto disponible en caja.');
+        throw new Exception('El monto del préstamo no puede ser mayor al monto disponible.');
     }
 
-    // 🔹 Registrar movimiento en Historial_Caja
-    $sqlInsert = "INSERT INTO Historial_Caja (id_caja, tipo_movimiento, monto, descripcion, fecha_movimiento, id_usuario)
-                  VALUES (:id_caja, 'prestamo', :monto, :descripcion, NOW(), :id_usuario)";
+    // 📝 Insertar en historial
+    $sqlInsert = "
+        INSERT INTO historial_caja 
+        (id_caja, tipo_movimiento, monto, descripcion, fecha_movimiento, id_Usuarios)
+        VALUES 
+        (:id_caja, 'prestamo', :monto, :descripcion, NOW(), :id_usuario)
+    ";
+
     $stmtInsert = $pdo->prepare($sqlInsert);
-    $stmtInsert->bindParam(':id_caja', $id_caja);
-    $stmtInsert->bindParam(':monto', $monto);
-    $stmtInsert->bindParam(':descripcion', $descripcion);
-    $stmtInsert->bindParam(':id_usuario', $id_usuario);
-    $stmtInsert->execute();
+    $stmtInsert->execute([
+        'id_caja'    => $id_caja,
+        'monto'      => $monto,
+        'descripcion'=> $descripcion,
+        'id_usuario' => $id_usuario
+    ]);
 
-    // 🔹 Actualizar el monto actual en la tabla Caja
-    $sqlUpdate = "UPDATE Caja SET monto_actual = monto_actual - :monto WHERE id_caja = :id_caja";
+    // 💰 Actualizar monto actual
+    $sqlUpdate = "
+        UPDATE caja 
+        SET monto_actual = monto_actual - :monto 
+        WHERE id_caja = :id_caja
+    ";
+
     $stmtUpdate = $pdo->prepare($sqlUpdate);
-    $stmtUpdate->bindParam(':monto', $monto);
-    $stmtUpdate->bindParam(':id_caja', $id_caja);
-    $stmtUpdate->execute();
+    $stmtUpdate->execute([
+        'monto'   => $monto,
+        'id_caja' => $id_caja
+    ]);
 
-    // ✅ Notificación de éxito
+    // ✅ Confirmar transacción
+    $pdo->commit();
+
     $_SESSION['titulo']  = 'Préstamo registrado';
-    $_SESSION['mensaje'] = 'El préstamo se registró correctamente y el monto de la caja fue actualizado.';
+    $_SESSION['mensaje'] = 'El préstamo se registró correctamente.';
     $_SESSION['icono']   = 'success';
 
 } catch (Exception $e) {
-    // ❌ Notificación de error
+
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     $_SESSION['titulo']  = 'Error';
     $_SESSION['mensaje'] = $e->getMessage();
     $_SESSION['icono']   = 'error';
 }
 
-// 🔹 Redirección final
 header('Location: ' . $URL . 'caja/administrar');
 exit;
-?>

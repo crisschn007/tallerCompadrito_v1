@@ -1,60 +1,89 @@
 <?php
-session_start();
-include '../../conexionBD.php';
+# app/controllers/caja/apertura_caja.php
+
+require_once '../../conexionBD.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (
-        isset($_POST['monto_apertura'], $_POST['id_usuario']) &&
-        !empty(trim($_POST['monto_apertura']))
-    ) {
-        try {
-            $monto_apertura = floatval($_POST['monto_apertura']);
-            $id_usuario = intval($_POST['id_usuario']);
+    if (!isset($_SESSION['id_usuario'])) {
+        $_SESSION['titulo']  = 'Sesión inválida';
+        $_SESSION['mensaje'] = 'Debe iniciar sesión nuevamente.';
+        $_SESSION['icono']   = 'error';
+        header('Location: ' . $URL . 'auth/');
+        exit;
+    }
 
-            // Fecha y hora actual
+    if (isset($_POST['monto_apertura']) && trim($_POST['monto_apertura']) !== '') {
+
+        try {
+
+            $monto_apertura = floatval($_POST['monto_apertura']);
+            $id_usuario     = (int) $_SESSION['id_usuario'];
             $fecha_apertura = date('Y-m-d H:i:s');
 
-            // Insertar en la tabla Caja
-            $query = "INSERT INTO caja (fecha_apertura, monto_apertura, monto_actual, estado, id_usuario)
-                      VALUES (:fecha_apertura, :monto_apertura, :monto_actual, 'abierta', :id_usuario)";
+            // 🔍 Verificar si ya existe caja abierta
+            $verificar = $pdo->prepare("
+                SELECT id_caja 
+                FROM caja 
+                WHERE id_Usuarios = :id_usuario 
+                  AND estado = 'abierta'
+                LIMIT 1
+            ");
+            $verificar->execute(['id_usuario' => $id_usuario]);
+
+            if ($verificar->fetch()) {
+
+                $_SESSION['titulo']  = 'Caja ya abierta';
+                $_SESSION['mensaje'] = 'Ya tienes una caja abierta actualmente.';
+                $_SESSION['icono']   = 'warning';
+                header('Location: ' . $URL . 'caja/administrar');
+                exit;
+            }
+
+            // ✅ Insertar nueva caja
+            $query = "
+                INSERT INTO caja 
+                (fecha_apertura, monto_apertura, monto_actual, estado, id_Usuarios)
+                VALUES 
+                (:fecha_apertura, :monto_apertura, :monto_actual, 'abierta', :id_usuario)
+            ";
+
             $stmt = $pdo->prepare($query);
-            $stmt->bindParam(':fecha_apertura', $fecha_apertura);
-            $stmt->bindParam(':monto_apertura', $monto_apertura);
-            $stmt->bindParam(':monto_actual', $monto_apertura); // mismo valor inicial
-            $stmt->bindParam(':id_usuario', $id_usuario);
+            $stmt->execute([
+                'fecha_apertura' => $fecha_apertura,
+                'monto_apertura' => $monto_apertura,
+                'monto_actual'   => $monto_apertura,
+                'id_usuario'     => $id_usuario
+            ]);
 
-            $stmt->execute();
-
-            // Notificación de éxito
             $_SESSION['titulo']  = '¡Caja Abierta!';
             $_SESSION['mensaje'] = 'La caja se ha aperturado correctamente.';
             $_SESSION['icono']   = 'success';
 
-            header('Location: ' . $URL . 'caja/administrar');
-            exit;
-
         } catch (PDOException $e) {
+
             $_SESSION['titulo']  = '¡Error!';
-            $_SESSION['mensaje'] = 'No se pudo abrir la caja: ' . $e->getMessage();
+            $_SESSION['mensaje'] = 'No se pudo abrir la caja.';
             $_SESSION['icono']   = 'error';
-            header('Location: ' . $URL . 'caja/administrar');
-            exit;
         }
 
     } else {
+
         $_SESSION['titulo']  = '¡Atención!';
         $_SESSION['mensaje'] = 'El monto de apertura es obligatorio.';
         $_SESSION['icono']   = 'warning';
-        header('Location: ' . $URL . 'caja/administrar');
-        exit;
     }
 
 } else {
+
     $_SESSION['titulo']  = '¡Acceso denegado!';
-    $_SESSION['mensaje'] = 'No tienes permiso para acceder directamente a esta página.';
+    $_SESSION['mensaje'] = 'No tienes permiso para acceder directamente.';
     $_SESSION['icono']   = 'error';
-    header('Location: ' . $URL . 'caja/administrar');
-    exit;
 }
-?>
+
+header('Location: ' . $URL . 'caja/administrar');
+exit;
