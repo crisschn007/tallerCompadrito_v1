@@ -1,4 +1,5 @@
 <?php
+#app/controllers/cotizaciones/pdf_cotizacion.php
 require_once '../../conexionBD.php';
 require_once '../../libraries/tcpdf/tcpdf.php';
 
@@ -24,7 +25,7 @@ if (!$cotizacion) {
     die("Cotización no encontrada.");
 }
 
-// 🔹 Obtener detalle de productos
+// 🔹 Obtener detalle de productos (Modificar si es precio mayorista o de venta)
 $sqlDetalle = "SELECT p.nombre_producto, dc.cantidad, dc.precio_unitario
                FROM Detalle_Cotizacion dc
                INNER JOIN Producto p ON dc.id_producto = p.id_producto
@@ -34,7 +35,7 @@ $stmtDetalle->execute([$idCotizacion]);
 $detalles = $stmtDetalle->fetchAll(PDO::FETCH_ASSOC);
 
 // ==================== TCPDF ====================
-// Tamaño personalizado: ancho 80 mm (ticket térmico)
+// Tamaño personalizado: ancho 80 mm (ticket térmico) No modificar
 $ancho = 80; // mm
 $alto = 200; // ajustable
 $pageLayout = array($ancho, $alto);
