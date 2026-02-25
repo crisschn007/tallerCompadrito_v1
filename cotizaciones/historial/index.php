@@ -1,4 +1,5 @@
 <?php
+#cotizaciones/historial/index.php
 include '../../app/conexionBD.php';
 include '../../layouts/sesion.php';
 ?>
