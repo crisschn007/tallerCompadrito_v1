@@ -27,7 +27,7 @@ if ($id_caja) {
         h.tabla_origen,
         u.nombre AS usuario
     FROM historial_caja h
-    INNER JOIN usuarios u ON h.id_usuario = u.id_Usuarios
+    INNER JOIN usuarios u ON h.id_Usuarios = u.id_Usuarios
     WHERE h.id_caja = :id_caja";
 
     if ($tipo === 'gastos_egresos') {
