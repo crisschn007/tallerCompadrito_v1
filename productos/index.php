@@ -64,7 +64,9 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
                       <th>Código</th>
                       <th>Imagen</th>
                       <th>Nombre</th>
-                      <th>Precio</th>
+                      <th>Precio de Compra</th>
+                      <th>Precio de Venta</th>
+                      <th>Precio Mayorista</th>
                       <th>Stock</th>
                       <th>Categoría</th>
                       <th>Código de Barras</th>
@@ -83,13 +85,16 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
                             <?php if (!empty($p['imagen']) && file_exists("../img/productos/" . $p['imagen'])): ?>
                               <img src="../img/productos/<?= htmlspecialchars($p['imagen']); ?>" width="70" height="70" class="img-thumbnail" alt="Imagen del producto">
                             <?php else: ?>
-                              <img src="https://via.placeholder.com/70x70?text=Sin+imagen" class="img-thumbnail" alt="producto no existente">
+                              <img src="https://via.placeholder.com/70x70?text=Sin+imagen" class="img-thumbnail" alt="imagen no disponible">
                             <?php endif; ?>
                           </td>
 
 
                           <td><?= htmlspecialchars($p['nombre_producto']); ?></td>
+                          <td>Q<?= number_format($p['precio_compra'], 2); ?></td>
                           <td>Q<?= number_format($p['precio'], 2); ?></td>
+                          <td>Q<?= number_format($p['precio_mayorista'],2) ; ?></td>
+
                           <td><?= htmlspecialchars($p['stock']); ?></td>
                           <td><?= htmlspecialchars($p['categoria'] ?? 'Sin categoría'); ?></td>
                           <td>
@@ -140,49 +145,92 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 
                         <!-- 🔹 Modal Ver Producto -->
                         <div class="modal fade" id="verProducto<?= $p['id_producto']; ?>" tabindex="-1" aria-hidden="true">
-                          <div class="modal-dialog modal-xl">
-                            <div class="modal-content">
+                          <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content shadow-lg border-0 rounded-3">
+
                               <div class="modal-header bg-success text-white">
-                                <h5 class="modal-title"><i class="bi bi-eye"></i> Detalle del Producto</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                <h5 class="modal-title fw-bold">
+                                  <i class="bi bi-eye"></i> Detalle del Producto
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                               </div>
-                              <div class="modal-body">
+
+                              <div class="modal-body bg-light">
                                 <div class="row g-4 align-items-center">
+
+                                  <!-- Imagen -->
                                   <div class="col-md-4 text-center">
-                                    <img src="../img/productos/<?= $p['imagen'] ?: 'default.png'; ?>"
+                                    <img
+                                      src="../img/productos/<?= $p['imagen'] ?: 'default.png'; ?>"
                                       class="img-fluid rounded shadow-sm"
-                                      style="max-height: 250px;" alt="imagen del producto">
+                                      style="max-height: 250px;"
+                                      alt="Imagen del producto">
                                   </div>
+
+                                  <!-- Información -->
                                   <div class="col-md-8">
-                                    <h4 class="fw-bold"><?= htmlspecialchars($p['nombre_producto']); ?></h4>
-                                    <p><strong>Descripción:</strong> <?= htmlspecialchars($p['descripcion']); ?></p>
-                                    <p><strong>Categoría:</strong> <?= htmlspecialchars($p['categoria']); ?></p>
-                                    <p><strong>Stock:</strong> <?= htmlspecialchars($p['stock']); ?></p>
-                                    <p><strong>Precio:</strong> Q<?= number_format($p['precio'], 2); ?></p>
-                                    <p><strong>Código de barras:</strong></p>
+                                    <h4 class="fw-bold mb-3">
+                                      <?= htmlspecialchars($p['nombre_producto']); ?>
+                                    </h4>
+
+                                    <p><strong>Descripción:</strong><br>
+                                      <?= htmlspecialchars($p['descripcion']); ?>
+                                    </p>
+
+                                    <div class="row">
+                                      <div class="col-md-6">
+                                        <p><strong>Categoría:</strong> <?= htmlspecialchars($p['categoria']); ?></p>
+                                        <p><strong>Stock disponible:</strong> <?= htmlspecialchars($p['stock']); ?></p>
+                                      </div>
+
+                                      <div class="col-md-3">
+                                        <p><strong>Precio de compra:</strong>
+                                          <span class="text-warning">Q<?= number_format($p['precio_compra'], 2); ?></span>
+                                        </p>
+                                        <p><strong>Precio de venta:</strong>
+                                          <span class="text-success fw-bold">Q<?= number_format($p['precio'], 2); ?></span>
+                                        </p>
+                                        <p><strong>Precio mayorista:</strong>
+                                          <span class="text-primary fw-semibold">Q<?= number_format($p['precio_mayorista'], 2); ?></span>
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <hr>
+
+                                    <!-- Código de barras -->
+                                    <p class="mb-2"><strong>Código de barras:</strong></p>
+
                                     <?php if (!empty($p['codigo_barras'])): ?>
                                       <div class="text-center mb-2">
-                                        <img id="barcodeImg<?= $p['id_producto']; ?>"
+                                        <img
                                           src="https://barcode.tec-it.com/barcode.ashx?data=<?= urlencode($p['codigo_barras']); ?>&code=Code128"
-                                          alt="Código de barras" style="width:200px; height:auto;">
-                                        <p class="small text-muted mt-1"><?= htmlspecialchars($p['codigo_barras']); ?></p>
+                                          alt="Código de barras"
+                                          style="width:200px; height:auto;">
 
-                                        <!-- 🔹 Botón de descarga con Picqer -->
-                                        <button type="button" class="btn btn-outline-primary btn-sm mt-2"
+                                        <p class="small text-muted mt-1">
+                                          <?= htmlspecialchars($p['codigo_barras']); ?>
+                                        </p>
+
+                                        <!-- Botón descargar -->
+                                        <button type="button"
+                                          class="btn btn-outline-primary btn-sm mt-2"
                                           onclick="window.open('../app/controllers/productos/descargar_codigo.php?descargar_codigo=1&codigo=<?= urlencode($p['codigo_barras']); ?>', '_blank')">
-                                          <i class="bi bi-download"></i> Descargar
+                                          <i class="bi bi-download"></i> Descargar código
                                         </button>
-
                                       </div>
                                     <?php else: ?>
                                       <span class="text-muted">No asignado</span>
                                     <?php endif; ?>
+
                                   </div>
                                 </div>
                               </div>
+
                             </div>
                           </div>
                         </div>
+
 
 
                         <!-- 🔹 Modal Editar Producto -->
@@ -234,19 +282,49 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
                                             <textarea name="descripcion" class="form-control" rows="2"><?= htmlspecialchars($p['descripcion']); ?></textarea>
                                           </div>
 
-                                          <!-- Stock, Precio, Categoría -->
+                                          <!-- Stock, Precio Compra, Precio Venta, Precio Mayorista,  Categoría -->
                                           <div class="col-md-4">
                                             <label class="form-label fw-semibold"><i class="bi bi-boxes"></i> Stock</label>
                                             <input type="number" name="stock" class="form-control"
                                               value="<?= htmlspecialchars($p['stock']); ?>" required>
                                           </div>
 
+                                          <!-- Precio compra -->
                                           <div class="col-md-4">
-                                            <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio</label>
+                                            <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio Compra</label>
+                                            <div class="input-group">
+                                              <span class="input-group-text text-secondary fw-bold">Q</span>
+                                              <input type="number" name="precio_compra"
+                                                class="form-control text-secondary fw-semibold"
+                                                step="0.01"
+                                                value="<?= htmlspecialchars($p['precio_compra']); ?>"
+                                                required>
+                                            </div>
+                                          </div>
+
+
+                                          <div class="col-md-4">
+                                            <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio Venta</label>
                                             <div class="input-group">
                                               <span class="input-group-text text-primary fw-bold">Q</span>
-                                              <input type="number" name="precio" class="form-control text-primary fw-semibold" step="0.01"
-                                                value="<?= htmlspecialchars($p['precio']); ?>" required>
+                                              <input type="number" name="precio"
+                                                class="form-control text-primary fw-semibold"
+                                                step="0.01"
+                                                value="<?= htmlspecialchars($p['precio']); ?>"
+                                                required>
+                                            </div>
+                                          </div>
+
+                                          <!-- Precio mayorista -->
+                                          <div class="col-md-4">
+                                            <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio Mayorista</label>
+                                            <div class="input-group">
+                                              <span class="input-group-text text-success fw-bold">Q</span>
+                                              <input type="number" name="precio_mayorista"
+                                                class="form-control text-success fw-semibold"
+                                                step="0.01"
+                                                value="<?= htmlspecialchars($p['precio_mayorista']); ?>"
+                                                required>
                                             </div>
                                           </div>
 
@@ -514,12 +592,30 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
                     </div>
 
                     <div class="col-md-4">
-                      <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio</label>
+                      <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio de Compra</label>
+                      <div class="input-group">
+                        <span class="input-group-text text-success fw-bold">Q</span>
+                        <input type="number" name="precio_compra" class="form-control text-success fw-semibold" step="0.01" placeholder="0.00" required>
+                      </div>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio de Venta</label>
                       <div class="input-group">
                         <span class="input-group-text text-success fw-bold">Q</span>
                         <input type="number" name="precio" class="form-control text-success fw-semibold" step="0.01" placeholder="0.00" required>
                       </div>
                     </div>
+
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold"><i class="bi bi-cash-stack"></i> Precio Mayorista</label>
+                      <div class="input-group">
+                        <span class="input-group-text text-success fw-bold">Q</span>
+                        <input type="number" name="precio_mayorista" class="form-control text-success fw-semibold" step="0.01" placeholder="0.00" required>
+                      </div>
+                    </div>
+
+
 
                     <div class="col-md-4">
                       <label class="form-label fw-semibold"><i class="bi bi-collection"></i> Categoría</label>
