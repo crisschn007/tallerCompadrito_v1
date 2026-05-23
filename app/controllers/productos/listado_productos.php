@@ -7,22 +7,22 @@ try {
         p.codigo_barras,
         p.imagen,
         p.nombre_producto,
+        p.precio_compra,
         p.descripcion,
         p.stock,
         p.precio,
+        p.precio_mayorista, 
         p.id_categoria,
         c.nombre AS categoria
     FROM Producto p
     LEFT JOIN Categoria c ON p.id_categoria = c.id_categoria
-    ORDER BY p.id_producto ASC";
+    ORDER BY p.id_producto ASC;";
 
     $query_producto = $pdo->prepare($sql_productos);
     $query_producto->execute();
     $producto_datos = $query_producto->fetchAll(PDO::FETCH_ASSOC);
 
     $total_productos = count($producto_datos);
-
 } catch (PDOException $e) {
     echo "Error al Consultar Productos: " . $e->getMessage();
 }
-?>

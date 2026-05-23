@@ -62,4 +62,3 @@ if (isset($_GET['id'])) {
 // 🔹 Redirigir al módulo de productos
 header('Location: ' . $URL . 'productos/');
 exit;
-?>
