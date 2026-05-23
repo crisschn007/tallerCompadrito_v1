@@ -42,12 +42,12 @@ $detalles = $stm2->fetchAll(PDO::FETCH_ASSOC);
     <div class="d-flex justify-content-between">
         <div>
             <h5>Compra #<?= htmlspecialchars($compra['id_Compra']) ?></h5>
-            <p class="mb-0"><strong>Proveedor:</strong> <?= htmlspecialchars($compra['proveedor'] ?: '---') ?></p>
-            <p class="mb-0"><strong>Registrado por:</strong> <?= htmlspecialchars($compra['usuario'] ?: '---') ?></p>
+            <p class="mb-0"><strong>Fecha:</strong> <?= htmlspecialchars($compra['fecha']) ?></p>
+            <p class="mb-0"><strong>Documento:</strong> <?= htmlspecialchars($compra['tipo_documento']) ?> #<?= htmlspecialchars($compra['numero_documento']) ?></p>
         </div>
         <div class="text-end">
-            <p class="mb-0"><strong>Fecha:</strong> <?= htmlspecialchars($compra['fecha_y_hora']) ?></p>
-            <p class="mb-0"><strong>Documento:</strong> <?= htmlspecialchars($compra['tipo_documento']) ?> #<?= htmlspecialchars($compra['numero_documento']) ?></p>
+            <p class="mb-0"><strong>Proveedor:</strong> <?= htmlspecialchars($compra['proveedor'] ?: '---') ?></p>
+            <p class="mb-0"><strong>Registrado por:</strong> <?= htmlspecialchars($compra['usuario'] ?: '---') ?></p>
         </div>
     </div>
 </div>
@@ -55,46 +55,42 @@ $detalles = $stm2->fetchAll(PDO::FETCH_ASSOC);
 <hr />
 
 <div class="table-responsive">
-<table class="table table-sm table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>Producto</th>
-            <th class="text-center">Cant.</th>
-            <th class="text-end">Precio</th>
-            <th class="text-end">Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($detalles as $d): ?>
+    <table class="table table-sm table-bordered">
+        <thead class="table-dark">
             <tr>
-                <td><?= htmlspecialchars($d['nombre_producto'] ?: 'Producto eliminado') ?></td>
-                <td class="text-center"><?= (int)$d['cantidad'] ?></td>
-                <td class="text-end">Q <?= number_format($d['costo_unitario'], 2) ?></td>
-                <td class="text-end">Q <?= number_format($d['subtotal'], 2) ?></td>
+                <th>Producto</th>
+                <th class="text-center">Cant.</th>
+                <th class="text-end">Precio</th>
+                <th class="text-end">Subtotal</th>
             </tr>
-        <?php endforeach; ?>
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3" class="text-end"><strong>Subtotal</strong></td>
-            <td class="text-end">Q <?= number_format($compra['subtotal'], 2) ?></td>
-        </tr>
-        <?php if ($compra['tipo_calculo'] === 'descuento'): ?>
-        <tr>
-            <td colspan="3" class="text-end"><strong>Descuento</strong></td>
-            <td class="text-end">Q <?= number_format($compra['descuento_total'], 2) ?></td>
-        </tr>
-        <?php endif; ?>
-        <?php if ($compra['tipo_calculo'] === 'impuesto'): ?>
-        <tr>
-            <td colspan="3" class="text-end"><strong>Impuesto (<?= htmlspecialchars($compra['tipo_impuesto']) ?>)</strong></td>
-            <td class="text-end">Q <?= number_format($compra['impuesto_total'], 2) ?></td>
-        </tr>
-        <?php endif; ?>
-        <tr>
-            <td colspan="3" class="text-end"><strong>Total</strong></td>
-            <td class="text-end"><strong>Q <?= number_format($compra['total'], 2) ?></strong></td>
-        </tr>
-    </tfoot>
-</table>
+        </thead>
+        <tbody>
+            <?php foreach ($detalles as $d): ?>
+                <tr>
+                    <td><?= htmlspecialchars($d['nombre_producto'] ?: 'Producto eliminado') ?></td>
+                    <td class="text-center"><?= (int)$d['cantidad'] ?></td>
+                    <td class="text-end">Q <?= number_format($d['costo_unitario'], 2) ?></td>
+                    <td class="text-end">Q <?= number_format($d['subtotal'], 2) ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end"><strong>Subtotal</strong></td>
+                <td class="text-end">Q <?= number_format($compra['subtotal'], 2) ?></td>
+            </tr>
+            <?php if ($compra['tipo_calculo'] === 'descuento'): ?>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Descuento</strong></td>
+                    <td class="text-end">Q <?= number_format($compra['descuento_total'], 2) ?></td>
+                </tr>
+            <?php endif; ?>
+            <tr>
+                <td colspan="3" class="text-end"><strong>Total</strong></td>
+                <td class="text-end"><strong>Q <?= number_format($compra['total'], 2) ?></strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <p class="mb-0"><strong>Total de artículos:</strong> <?= count($detalles) ?></p>
 </div>

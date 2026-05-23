@@ -3,10 +3,28 @@
 include '../../app/conexionBD.php';
 include '../../layouts/sesion.php';
 
+// Filtros
+$desde = $_GET['desde'] ?? null;
+$hasta = $_GET['hasta'] ?? null;
+
+$where = "";
+$params = [];
+
+if ($desde && $hasta) {
+    $where = "WHERE c.fecha BETWEEN :desde AND :hasta";
+    $params = [':desde' => $desde, ':hasta' => $hasta];
+} elseif ($desde) {
+    $where = "WHERE c.fecha >= :desde";
+    $params = [':desde' => $desde];
+} elseif ($hasta) {
+    $where = "WHERE c.fecha <= :hasta";
+    $params = [':hasta' => $hasta];
+}
+
 // Consulta para mostrar historial (resumida)
 $sql = "SELECT 
     c.id_Compra,
-    c.fecha_y_hora,
+    c.fecha,
     c.tipo_documento,
     c.numero_documento,
     c.tipo_calculo,
@@ -18,11 +36,12 @@ FROM compra c
 INNER JOIN proveedor pr ON c.id_proveedor = pr.id_proveedor
 INNER JOIN detalle_compra dc ON c.id_Compra = dc.id_compra
 INNER JOIN producto p ON dc.id_producto = p.id_producto
+{$where}
 GROUP BY c.id_Compra
-ORDER BY c.fecha_y_hora DESC, c.id_Compra DESC";
+ORDER BY c.fecha DESC, c.id_Compra DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute();
+$stmt->execute($params);
 $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -71,13 +90,14 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                             <div class="d-flex gap-2">
 
-                                <a href="<?php echo $URL ?>app/controllers/compras/export_pdf.php" class="btn btn-danger" id="exportPdfAll">
-                                    <i class="bi bi-file-earmark-pdf"></i> PDF general
+                                <a href="<?= $URL ?>app/controllers/compras/export_pdf.php?desde=<?= $desde ?>&hasta=<?= $hasta ?>"
+                                    class="btn btn-danger" target="_blank">
+                                    PDF general
                                 </a>
 
-                                <a href="<?php echo $URL ?>app/controllers/compras/export_excel.php"
+                                <a href="<?= $URL ?>app/controllers/compras/export_excel.php?desde=<?= $desde ?>&hasta=<?= $hasta ?>"
                                     class="btn btn-success" target="_blank">
-                                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Excel general
+                                    Excel general
                                 </a>
 
 
@@ -86,12 +106,39 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
 
                         <div class="card-body">
+
+                            <form method="GET" class="row g-2 mb-3">
+
+                                <div class="col-md-3">
+                                    <label>Desde</label>
+                                    <input type="date" name="desde" class="form-control"
+                                        value="<?= htmlspecialchars($desde ?? '') ?>">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label>Hasta</label>
+                                    <input type="date" name="hasta" class="form-control"
+                                        value="<?= htmlspecialchars($hasta ?? '') ?>">
+                                </div>
+
+                                <div class="col-md-3 d-flex align-items-end gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        Filtrar
+                                    </button>
+
+                                    <a href="index.php" class="btn btn-secondary">
+                                        Limpiar
+                                    </a>
+                                </div>
+
+                            </form>
+
                             <div class="table-responsive">
                                 <table id="tablaHistorial" class="table table-striped table-bordered">
                                     <thead class="table-dark">
                                         <tr>
                                             <th>#</th>
-                                            <th>Fecha y Hora</th>
+                                            <th>Fecha</th>
                                             <th>Proveedor</th>
                                             <th>Documento</th>
                                             <th>Método</th>
@@ -105,7 +152,7 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <?php foreach ($compras as $fila): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($fila['id_Compra']) ?></td>
-                                                <td><?= htmlspecialchars($fila['fecha_y_hora']) ?></td>
+                                                <td><?= htmlspecialchars($fila['fecha']) ?></td>
                                                 <td><?= htmlspecialchars($fila['proveedor']) ?></td>
                                                 <td><?= htmlspecialchars($fila['tipo_documento']) ?> #<?= htmlspecialchars($fila['numero_documento']) ?></td>
                                                 <td><?= htmlspecialchars(ucfirst($fila['tipo_calculo'])) ?></td>
@@ -126,10 +173,7 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                         <i class="bi bi-filetype-pdf"></i>
                                                     </a>
 
-                                                    <!-- Eliminar -->
-                                                    <button class="btn btn-danger btn-sm btnEliminar" data-id="<?= htmlspecialchars($fila['id_Compra']) ?>" title="Eliminar">
-                                                        <i class="bi bi-trash3-fill"></i>
-                                                    </button>
+
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -200,23 +244,7 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
 
-            // Eliminar compra (confirm)
-            $(document).on('click', '.btnEliminar', function() {
-                const id = $(this).data('id');
-                Swal.fire({
-                    title: '¿Eliminar la compra?',
-                    text: 'Se eliminarán también sus detalles. Esta acción es irreversible.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // redirige al controlador de eliminación
-                        window.location.href = '<?= htmlspecialchars($URL) ?>app/controllers/compras/eliminar_compra.php?id=' + encodeURIComponent(id);
-                    }
-                });
-            });
+
 
             // Exportar (placeholder) — puedes apuntarlo a controlador que haga todo el PDF general
             $('#exportPdfAll').on('click', function(e) {
@@ -225,7 +253,7 @@ $compras = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         });
     </script>
-<?php include '../../layouts/notificaciones.php'; ?>
+    <?php include '../../layouts/notificaciones.php'; ?>
 
 </body>
 
