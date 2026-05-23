@@ -1,19 +1,20 @@
 <?php
+
 header('Content-Type: application/json');
 require '../../conexionBD.php';
 session_start();
 
-// ------------- TCPDF -------------
 require_once(__DIR__ . '/../../libraries/tcpdf/tcpdf.php');
 
-// 1. Leer JSON crudo
+// DEBUG
 $input = file_get_contents("php://input");
 $data = json_decode($input, true);
+
 
 if (!$data) {
     echo json_encode([
         'success' => false,
-        'message' => 'No se recibió información válida'
+        'message' => 'JSON vacío o inválido'
     ]);
     exit;
 }
@@ -22,58 +23,56 @@ try {
 
     $pdo->beginTransaction();
 
-    // =======================================
-    //  DATOS DE COMPRA
-    // =======================================
+    // ==============================
+    // DATOS
+    // ==============================
     $fecha = $data['fecha'];
     $tipoDocumento = $data['tipoDocumento'];
     $numeroDocumento = $data['numeroDocumento'];
     $id_proveedor = $data['id_proveedor'];
-    $tipoCalculo = $data['tipoCalculo'];
-    $porcentajeDescuento = $data['porcentajeDescuentoGlobal'];
-    $tipoImpuesto = $data['tipoImpuesto'];
+
+    $tipoCalculo = $data['tipoCompra'];
+    $porcentajeDescuento = $data['porcentaje_descuento'] ?? 0;
+
     $productos = $data['productos'];
     $id_usuario = $_SESSION['id_usuario'];
 
-    // SUBTOTAL
-    $subtotal = array_sum(array_column($productos, 'subtotal'));
+    // ==============================
+    // CALCULOS
+    // ==============================
+    $subtotal = 0;
 
-    // DESCUENTO GLOBAL
+    foreach ($productos as $p) {
+        $subtotal += $p['precio'] * $p['cantidad'];
+    }
+
     $descuento_total = ($tipoCalculo === "descuento")
         ? $subtotal * ($porcentajeDescuento / 100)
         : 0;
 
-    // IMPUESTO GLOBAL
-    $impuesto_total = ($tipoCalculo === "impuesto")
-        ? $subtotal * $tipoImpuesto
-        : 0;
+    $total = $subtotal - $descuento_total;
 
-    // TOTAL A PAGAR
-    $total = ($subtotal - $descuento_total) + $impuesto_total;
-
-    // =======================================
-    // INSERT EN TABLA COMPRA
-    // =======================================
+    // ==============================
+    // INSERT COMPRA
+    // ==============================
     $sqlCompra = "INSERT INTO compra
-        (fecha_y_hora, tipo_documento, numero_documento, tipo_calculo,
-         porcentaje_descuento_global, tipo_impuesto, subtotal, descuento_total,
-         impuesto_total, total, id_proveedor, id_Usuarios)
-        VALUES (:fecha_y_hora, :tipo_documento, :numero_documento, :tipo_calculo,
-         :porcentaje_descuento_global, :tipo_impuesto, :subtotal, :descuento_total,
-         :impuesto_total, :total, :id_proveedor, :id_Usuarios)";
+        (fecha, tipo_documento, numero_documento, tipo_calculo,
+         porcentaje_descuento_global, subtotal, descuento_total,
+         total, id_proveedor, id_Usuarios)
+        VALUES (:fecha, :tipo_documento, :numero_documento, :tipo_calculo,
+         :porcentaje_descuento_global, :subtotal, :descuento_total,
+         :total, :id_proveedor, :id_Usuarios)";
 
     $stmt = $pdo->prepare($sqlCompra);
 
     $stmt->execute([
-        ':fecha_y_hora' => $fecha . " " . date("H:i:s"),
+        ':fecha' => $fecha,
         ':tipo_documento' => $tipoDocumento,
         ':numero_documento' => $numeroDocumento,
         ':tipo_calculo' => $tipoCalculo,
         ':porcentaje_descuento_global' => $porcentajeDescuento,
-        ':tipo_impuesto' => ($tipoImpuesto == 0 ? null : "IVA12"),
         ':subtotal' => $subtotal,
         ':descuento_total' => $descuento_total,
-        ':impuesto_total' => $impuesto_total,
         ':total' => $total,
         ':id_proveedor' => $id_proveedor,
         ':id_Usuarios' => $id_usuario
@@ -81,44 +80,50 @@ try {
 
     $id_compra = $pdo->lastInsertId();
 
-    // =======================================
-    // DETALLE COMPRA Y STOCK
-    // =======================================
+    // ==============================
+    // DETALLE + STOCK + PRECIOS
+    // ==============================
     $sqlDetalle = "INSERT INTO detalle_compra
-        (id_compra, id_producto, cantidad, costo_unitario, subtotal)
+        (id_Compra, id_producto, cantidad, costo_unitario, subtotal)
         VALUES (:id_compra, :id_producto, :cantidad, :costo_unitario, :subtotal)";
 
     $stmtDetalle = $pdo->prepare($sqlDetalle);
 
     foreach ($productos as $p) {
 
-        // Insertar detalle
+        $subtotal_item = $p['precio'] * $p['cantidad'];
+
+        // INSERT DETALLE
         $stmtDetalle->execute([
             ':id_compra' => $id_compra,
             ':id_producto' => $p['id'],
             ':cantidad' => $p['cantidad'],
             ':costo_unitario' => $p['precio'],
-            ':subtotal' => $p['subtotal']
+            ':subtotal' => $subtotal_item
         ]);
 
-        // Actualizar stock
-        $sqlStock = "UPDATE producto
-                     SET stock = stock + :cantidad
-                     WHERE id_producto = :id_producto";
+        // ACTUALIZAR STOCK + PRECIOS
+        $sqlUpdateProducto = "UPDATE producto
+            SET stock = stock + :cantidad,
+                precio = :precio_venta,
+                precio_mayorista = :precio_mayorista
+            WHERE id_producto = :id_producto";
 
-        $stmtStock = $pdo->prepare($sqlStock);
-        $stmtStock->execute([
+        $stmtUpdateProducto = $pdo->prepare($sqlUpdateProducto);
+        $stmtUpdateProducto->execute([
             ':cantidad' => $p['cantidad'],
+            ':precio_venta' => $p['precio_venta'],
+            ':precio_mayorista' => $p['precio_mayorista'],
             ':id_producto' => $p['id']
         ]);
     }
 
-    // =======================================
-    // AFECTAR CAJA (EGRESO)
-    // =======================================
+    // ==============================
+    // CAJA
+    // ==============================
     $sqlCaja = "SELECT * FROM caja
                 WHERE estado = 'abierta'
-                AND id_usuario = :id_usuario
+                AND id_Usuarios = :id_usuario
                 LIMIT 1";
 
     $stmtCaja = $pdo->prepare($sqlCaja);
@@ -133,113 +138,75 @@ try {
     $nuevo_monto = $caja['monto_actual'] - $total;
 
     if ($nuevo_monto < 0) {
-        throw new Exception("Saldo insuficiente en caja para registrar esta compra.");
+        throw new Exception("Saldo insuficiente en caja.");
     }
 
-    // Actualizar monto en caja
-    $sqlUpdateCaja = "UPDATE caja
-                      SET monto_actual = :monto_actual
-                      WHERE id_caja = :id_caja";
+    // UPDATE CAJA
+    $pdo->prepare("UPDATE caja SET monto_actual = :monto WHERE id_caja = :id")
+        ->execute([
+            ':monto' => $nuevo_monto,
+            ':id' => $id_caja
+        ]);
 
-    $stmtUpdateCaja = $pdo->prepare($sqlUpdateCaja);
-    $stmtUpdateCaja->execute([
-        ':monto_actual' => $nuevo_monto,
-        ':id_caja' => $id_caja
-    ]);
+    // HISTORIAL
+    $pdo->prepare("INSERT INTO historial_caja
+    (id_caja, tipo_movimiento, monto, descripcion, numero_comprobante, tabla_origen, id_Usuarios)
+    VALUES (:id_caja, 'egreso', :monto, :descripcion, :numero, 'Compra', :id_usuario)")
+        ->execute([
+            ':id_caja' => $id_caja,
+            ':monto' => $total,
+            ':descripcion' => 'Compra #' . $id_compra,
+            ':numero' => $numeroDocumento,
+            ':id_usuario' => $id_usuario
+        ]);
 
-    // Historial de caja
-    $sqlHistorial = "INSERT INTO historial_caja
-        (id_caja, tipo_movimiento, monto, descripcion, numero_comprobante,
-         tabla_origen, id_usuario)
-        VALUES
-        (:id_caja, 'egreso', :monto, :descripcion, :numero_comprobante,
-         'Compra', :id_usuario)";
-
-    $stmtHistorial = $pdo->prepare($sqlHistorial);
-    $stmtHistorial->execute([
-        ':id_caja' => $id_caja,
-        ':monto' => $total,
-        ':descripcion' => 'Compra #' . $id_compra,
-        ':numero_comprobante' => $numeroDocumento,
-        ':id_usuario' => $id_usuario
-    ]);
-
-    // Finalizar SQL
     $pdo->commit();
 
-    // =======================================
-    // GENERAR PDF
-    // =======================================
-    // Obtener nombre del proveedor
-    $sqlProv = "SELECT nombre_empresa FROM proveedor WHERE id_proveedor = :id_proveedor LIMIT 1";
-    $stmtProv = $pdo->prepare($sqlProv);
-    $stmtProv->execute([':id_proveedor' => $id_proveedor]);
-    $proveedor = $stmtProv->fetch(PDO::FETCH_ASSOC);
-
-    $nombre_empresa = $proveedor ? $proveedor['nombre_empresa'] : 'Proveedor desconocido';
+    // ==============================
+    // PDF
+    // ==============================
+    $stmtProv = $pdo->prepare("SELECT nombre_empresa FROM proveedor WHERE id_proveedor = :id");
+    $stmtProv->execute([':id' => $id_proveedor]);
+    $prov = $stmtProv->fetch(PDO::FETCH_ASSOC);
 
     $pdf = new TCPDF();
     $pdf->AddPage();
 
-   $html = "
-    <h1>Compra #{$id_compra}</h1>
+    $html = "<h1>Compra #{$id_compra}</h1>
     <p><strong>Fecha:</strong> {$fecha}</p>
-    <p><strong>Documento:</strong> {$tipoDocumento} - {$numeroDocumento}</p>
-    <p><strong>Proveedor:</strong> {$nombre_empresa}</p>
-
-    <br>
-    <table border='1' cellspacing='0' cellpadding='4'>
-        <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Costo</th>
-            <th>Subtotal</th>
-        </tr>";
+    <p><strong>Proveedor:</strong> " . ($prov['nombre_empresa'] ?? 'N/A') . "</p>
+    <table border='1' cellpadding='4'>
+    <tr><th>Producto</th><th>Cant</th><th>Costo</th><th>Subtotal</th></tr>";
 
     foreach ($productos as $p) {
-        $html .= "
-            <tr>
-                <td>{$p['nombre']}</td>
-                <td>{$p['cantidad']}</td>
-                <td>{$p['precio']}</td>
-                <td>{$p['subtotal']}</td>
-            </tr>";
+        $sub = $p['precio'] * $p['cantidad'];
+        $html .= "<tr>
+            <td>{$p['nombre']}</td>
+            <td>{$p['cantidad']}</td>
+            <td>{$p['precio']}</td>
+            <td>{$sub}</td>
+        </tr>";
     }
 
-    $html .= "
-        </table>
-        <br><br>
-        <h3>Total: Q {$total}</h3>
-    ";
+    $html .= "</table><h3>Total: Q {$total}</h3>";
 
-    $pdf->writeHTML($html, true, false, true, false, '');
+    $pdf->writeHTML($html);
 
-    // =======================================
-    // RUTA DE PDF (CORREGIDA)
-    // =======================================
-    $carpeta = __DIR__ . '/../../../reportes/compras/';
+    $ruta = __DIR__ . '/../../../reportes/compras/'; //salida del archivo de reportes
+    if (!is_dir($ruta)) mkdir($ruta, 0777, true);
 
-    if (!is_dir($carpeta)) {
-        mkdir($carpeta, 0777, true);
-    }
-
-    $rutaPDF = $carpeta . "compra_" . $id_compra . ".pdf";
-
-    $pdf->Output($rutaPDF, 'F');
+    $pdf->Output($ruta . "compra_$id_compra.pdf", 'F');
 
     echo json_encode([
         'success' => true,
-        'message' => 'Compra guardada correctamente',
-        'id_compra' => $id_compra,
-        'pdf_url' => "reportes/compras/compra_{$id_compra}.pdf"
+        'message' => 'Compra guardada correctamente'
     ]);
-    exit;
 } catch (Exception $e) {
 
     $pdo->rollBack();
+
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
-    exit;
 }
